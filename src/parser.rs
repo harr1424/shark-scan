@@ -1,6 +1,20 @@
 use clap::Parser;
 
-
+/// The Args struct is used to contain and parse command line arguments
+///
+/// -t --target <target ip address> The IP address to scan
+///
+/// -v --verbosity <[none, low, high]> The level of program output
+///
+/// -n --threads <int> The number of threads to use
+///
+/// -p --port-range <int:int,int,int> The port range or comma separated ports to scan
+///
+/// -m --timeout <int> The number of milliseconds to wait for a connection on a given port
+///
+/// --probe When this is provided an HTTP GET request will be sent to the port
+///
+/// Do not use --probe when scanning untrusted hosts as they may send a malicious response
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
@@ -16,13 +30,16 @@ pub struct Args {
     /// The port range to scan in the format start:end or comma separated
     #[arg(short = 'p', long, default_value = "1:1024")]
     pub(crate) port_range: String,
-    /// The time in seconds to await successful port connection
-    #[arg(short = 's', long, default_value = "1")]
+    /// The time in milliseconds to await successful port connection
+    #[arg(short = 'm', long, default_value = "100")]
     pub(crate) timeout: u64,
-
+    /// ***Do not use against untrusted hosts***
+    /// Probe the socket by performing an HTTP GET request
+    #[arg(long)]
+    pub(crate) probe: bool,
 }
 
-pub fn parse_ports(port_arg: &str) -> Vec<u16> {
+pub (crate) fn parse_ports(port_arg: &str) -> Vec<u16> {
     let mut ports = Vec::new();
     for port in port_arg.split(',') {
         if port.contains(':') {

@@ -9,6 +9,13 @@ use log::{error, info};
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::{parser::{parse_ports, Args}};
+
+/// A struct to contain scan results for a given port:
+///
+/// `status` will be set to open if a connection succeeds
+///
+/// If the --probe flag is used, `banner` will contain the first 1024 bytes
+/// returned by the service on that port, if it supports HTTP
 #[derive(Serialize, Deserialize)]
 pub struct ScanResult {
     port: u16,
@@ -16,13 +23,11 @@ pub struct ScanResult {
     banner: Option<String>,
 }
 
-///
-pub async fn grab_banner(target: &str, port: u16, timeout_secs: u64) -> Option<String> {
+async fn probe(target: &str, port: u16, timeout_ms: u64) -> Option<String> {
     let address = format!("{}:{}", target, port);
     info!("Attempting to connect to {}", address);
 
-    // Set a timeout for the connection attempt
-    match timeout(Duration::from_secs(timeout_secs), TcpStream::connect(&address)).await {
+    match timeout(Duration::from_millis(timeout_ms), TcpStream::connect(&address)).await {
         Ok(Ok(mut stream)) => {
             info!("Connected to {}", address);
 
@@ -40,8 +45,8 @@ pub async fn grab_banner(target: &str, port: u16, timeout_secs: u64) -> Option<S
 
             let mut banner = vec![0; 1024];
 
-            // Set a timeout for the read operation
-            match timeout(Duration::from_secs(5), stream.read(&mut banner)).await {
+            // Wait one full second to read response from server
+            match timeout(Duration::from_secs(1), stream.read(&mut banner)).await {
                 Ok(Ok(n)) if n > 0 => {
                     info!("Read {} bytes from {}", n, address);
                     return Some(String::from_utf8_lossy(&banner[..n]).to_string());
@@ -68,17 +73,26 @@ pub async fn grab_banner(target: &str, port: u16, timeout_secs: u64) -> Option<S
     None
 }
 
-pub async fn check_port(target: Arc<String>, port: u16, timeout_secs: u64, results: Arc<AsyncMutex<Vec<ScanResult>>>) {
+async fn check_port(target: Arc<String>, port: u16, timeout_ms: u64, do_probe: bool, results: Arc<AsyncMutex<Vec<ScanResult>>>) {
     let address = format!("{}:{}", target, port);
-    match timeout(Duration::from_secs(timeout_secs), TcpStream::connect(&address)).await {
+    match timeout(Duration::from_secs(timeout_ms), TcpStream::connect(&address)).await {
         Ok(Ok(_)) => {
-            let banner = grab_banner(&target, port, timeout_secs).await;
-            let mut results = results.lock().await;
-            results.push(ScanResult {
-                port,
-                status: "open".to_string(),
-                banner,
-            });
+            if do_probe {
+                let banner = probe(&target, port, timeout_ms).await;
+                let mut results = results.lock().await;
+                results.push(ScanResult {
+                    port,
+                    status: "open".to_string(),
+                    banner,
+                });
+            } else {
+                let mut results = results.lock().await;
+                results.push(ScanResult {
+                    port,
+                    status: "open".to_string(),
+                    banner: None,
+                });
+            }
         }
         Ok(Err(e)) => {
             let status = match e.kind() {
@@ -93,8 +107,6 @@ pub async fn check_port(target: Arc<String>, port: u16, timeout_secs: u64, resul
     }
 }
 
-/// Parses target IP address and port range(S) from args and uses the specified number
-/// of threads to create a threadpool in order to scan open ports concurrently across threads
 pub async fn scan(args: Args) {
     let ports = parse_ports(&args.port_range);
     let target = Arc::new(args.target.trim().to_string());
@@ -112,10 +124,11 @@ pub async fn scan(args: Args) {
         let results = Arc::clone(&results);
         let target = Arc::clone(&target);
         let timeout = args.timeout;
+        let probe = args.probe;
         pool.execute(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-                check_port(target, port, timeout, results).await;
+                check_port(target, port, timeout, probe, results).await;
             });
         });
     }
