@@ -22,7 +22,7 @@ pub struct Args {
 
 }
 
-pub (crate) fn parse_ports(port_arg: &str) -> Vec<u16> {
+pub fn parse_ports(port_arg: &str) -> Vec<u16> {
     let mut ports = Vec::new();
     for port in port_arg.split(',') {
         if port.contains(':') {
