@@ -21,7 +21,7 @@ Options:
 
 ### Examples
 ```text
-shark-scan -t 192.168.1.1 -n 6 
+shark-scan -t 192.168.1.1 -n 6
 ****************************************
 * Scanning: 192.168.1.1 *
 ****************************************
@@ -49,10 +49,31 @@ shark-scan -t 192.168.1.1 -p 20:25 -n 6 -m 1000 -v high
 Scanning completed in 0.00 seconds
 ```
 
+```text
+❯ shark-scan -t 2600:6c67:6f3f:e79b::1 -p 50:60 -v high
+****************************************
+* Scanning: 2600:6c67:6f3f:e79b::1 *
+****************************************
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 51 refused
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 50 refused
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 52 refused
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 55 refused
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 54 refused
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 56 refused
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 57 refused
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 59 refused
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 60 refused
+[2024-08-07T14:14:04Z INFO  shark_scan::scanner] Port 58 refused
+
+Port 53 open
+
+Scanning completed in 0.03 seconds
+```
+
 ### Safety
 While this binary crate does not violate Rust's memory or type safety, executing this program
-with the `--probe` flag on an untrusted host may present a security risk. When this flag is used, 
-the following code will execute: 
+with the `--probe` flag on an untrusted host may present a security risk. When this flag is used,
+the following code will execute:
 ```rust
 let http_request = format!(
     "GET / HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
@@ -86,15 +107,15 @@ match timeout(Duration::from_secs(1), stream.read(&mut banner)).await {
 }
 ```
 
-A malicious host may respond with a payload crafted to damage your system. 
-If the `--probe` flag is not supplied, no HTTP requests will be sent, and the program will simply 
-try to complete a TCP connection with the target IP address ports. The decision to use this feature is left to 
-the crate's user and the author assumes no liability for any consequences. 
+A malicious host may respond with a payload crafted to damage your system.
+If the `--probe` flag is not supplied, no HTTP requests will be sent, and the program will simply
+try to complete a TCP connection with the target IP address ports. The decision to use this feature is left to
+the crate's user and the author assumes no liability for any consequences.
 
-### Probe functionality 
-Currently the functionality provided by passing the `--probe` flag is limited: it will only perform an HTTP GET 
-request to the service root ("/") endpoint. In the future, I would like to research additional probes that work 
-on services not supporting HTTP. An example of current functionality is shown below: 
+### Probe functionality
+Currently the functionality provided by passing the `--probe` flag is limited: it will only perform an HTTP GET
+request to the service root ("/") endpoint. In the future, I would like to research additional probes that work
+on services not supporting HTTP. An example of current functionality is shown below:
 
 ```text
 shark-scan -t 192.168.1.1 -n 6 --probe
@@ -118,7 +139,7 @@ Port 53 open
 Scanning completed in 1.03 seconds
 ```
 
-Another example: 
+Another example:
 
 ```text
 shark-scan -t  104.21.94.80 -p 80,443 --probe
@@ -160,5 +181,4 @@ error code: 1003
 Scanning completed in 0.43 seconds
 ```
 
-As you can see, some useful information might be obtained. Pull requests adding to this functionality are welcome. 
-
+As you can see, some useful information might be obtained. Pull requests adding to this functionality are welcome.
