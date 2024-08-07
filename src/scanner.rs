@@ -28,9 +28,9 @@ async fn grab_banner(target: &str, port: u16) -> Option<String> {
     None
 }
 
-async fn check_port(target: Arc<String>, port: u16, results: Arc<AsyncMutex<Vec<ScanResult>>>) {
+async fn check_port(target: Arc<String>, port: u16, timeout_secs: u64, results: Arc<AsyncMutex<Vec<ScanResult>>>) {
     let address = format!("{}:{}", target, port);
-    match timeout(Duration::from_secs(1), TcpStream::connect(&address)).await {
+    match timeout(Duration::from_secs(timeout_secs), TcpStream::connect(&address)).await {
         Ok(Ok(_)) => {
             let banner = grab_banner(&target, port).await;
             let mut results = results.lock().await;
@@ -71,10 +71,11 @@ pub async fn scan(args: Args) {
     for port in ports {
         let results = Arc::clone(&results);
         let target = Arc::clone(&target);
+        let timeout = args.timeout;
         pool.execute(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async move {
-                check_port(target, port, results).await;
+                check_port(target, port, timeout, results).await;
             });
         });
     }

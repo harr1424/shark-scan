@@ -15,7 +15,11 @@ pub struct Args {
     pub(crate) threads: usize,
     /// The port range to scan in the format start:end or comma separated
     #[arg(short = 'p', long, default_value = "1:1024")]
-    pub(crate) port_range: String
+    pub(crate) port_range: String,
+    /// The time in seconds to await successful port connection
+    #[arg(short = 's', long, default_value = "1")]
+    pub(crate) timeout: u64,
+
 }
 
 pub (crate) fn parse_ports(port_arg: &str) -> Vec<u16> {
