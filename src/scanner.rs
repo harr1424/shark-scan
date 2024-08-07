@@ -1,14 +1,15 @@
-use std::io;
-use tokio::net::TcpStream;
-use tokio::time::timeout;
-use tokio::sync::Mutex as AsyncMutex;
-use std::time::{Duration, Instant};
-use std::sync::{Arc};
-use threadpool::ThreadPool;
+use crate::parser::{parse_ports, Args};
 use log::{error, info};
 use serde::{Deserialize, Serialize};
+use std::io;
+use std::net::{SocketAddr, ToSocketAddrs};
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use threadpool::ThreadPool;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use crate::{parser::{parse_ports, Args}};
+use tokio::net::TcpStream;
+use tokio::sync::Mutex as AsyncMutex;
+use tokio::time::timeout;
 
 /// A struct to contain scan results for a given port:
 ///
@@ -25,9 +26,16 @@ pub struct ScanResult {
 
 async fn probe(target: &str, port: u16, timeout_ms: u64) -> Option<String> {
     let address = format!("{}:{}", target, port);
+    let socket_addr: SocketAddr = address.to_socket_addrs().ok()?.next()?;
+
     info!("Attempting to connect to {}", address);
 
-    match timeout(Duration::from_millis(timeout_ms), TcpStream::connect(&address)).await {
+    match timeout(
+        Duration::from_millis(timeout_ms),
+        TcpStream::connect(&socket_addr),
+    )
+    .await
+    {
         Ok(Ok(mut stream)) => {
             info!("Connected to {}", address);
 
@@ -73,9 +81,34 @@ async fn probe(target: &str, port: u16, timeout_ms: u64) -> Option<String> {
     None
 }
 
-async fn check_port(target: Arc<String>, port: u16, timeout_ms: u64, do_probe: bool, results: Arc<AsyncMutex<Vec<ScanResult>>>) {
+async fn check_port(
+    target: Arc<String>,
+    port: u16,
+    timeout_ms: u64,
+    do_probe: bool,
+    results: Arc<AsyncMutex<Vec<ScanResult>>>,
+) {
     let address = format!("{}:{}", target, port);
-    match timeout(Duration::from_secs(timeout_ms), TcpStream::connect(&address)).await {
+    let socket_addr: SocketAddr = match address.to_socket_addrs() {
+        Ok(mut addrs) => match addrs.next() {
+            Some(addr) => addr,
+            None => {
+                error!("Could not resolve address: {}", address);
+                return;
+            }
+        },
+        Err(e) => {
+            error!("Failed to resolve address {}: {:?}", address, e);
+            return;
+        }
+    };
+
+    match timeout(
+        Duration::from_secs(timeout_ms),
+        TcpStream::connect(&socket_addr),
+    )
+    .await
+    {
         Ok(Ok(_)) => {
             if do_probe {
                 let banner = probe(&target, port, timeout_ms).await;
@@ -142,11 +175,22 @@ pub async fn scan(args: Args) {
 
     println!();
     for result in results.await.iter() {
-        println!("Port {} {}{}", result.port, result.status,
-                 result.banner.as_ref().map(|b| format!(" - {}", b)).unwrap_or_default());
+        println!(
+            "Port {} {}{}",
+            result.port,
+            result.status,
+            result
+                .banner
+                .as_ref()
+                .map(|b| format!(" - {}", b))
+                .unwrap_or_default()
+        );
     }
 
-    println!("\nScanning completed in {:.2} seconds", duration.as_secs_f64());
+    println!(
+        "\nScanning completed in {:.2} seconds",
+        duration.as_secs_f64()
+    );
 }
 
 #[cfg(test)]

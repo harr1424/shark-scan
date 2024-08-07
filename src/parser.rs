@@ -46,13 +46,17 @@ pub(crate) fn parse_ports(port_arg: &str) -> Vec<u16> {
         if port.contains(':') {
             let range: Vec<&str> = port.split(':').collect();
             if range.len() == 2 {
-                let start: u16 = range[0].parse().expect("Invalid start port, expected similar to -p 1:1024");
-                let end: u16 = range[1].parse().expect("Invalid end port, expected similar to -p 1:1024");
+                let start: u16 = range[0]
+                    .parse()
+                    .expect("Invalid start port, expected similar to -p 1:1024");
+                let end: u16 = range[1]
+                    .parse()
+                    .expect("Invalid end port, expected similar to -p 1:1024");
                 for port in start..=end {
                     ports.push(port);
                 }
             } else {
-                panic!("Bad port range. Expected similar to -p 1:1024");
+                panic!("Invalid port: expected similar to -p 1:1024");
             }
         } else {
             let port: u16 = port.parse().expect(&format!("Invalid port: {}", port));
@@ -70,7 +74,10 @@ mod tests {
     fn test_parse_ports() {
         let port_range = "20:25,31,32,45:50";
         let ports = parse_ports(port_range);
-        assert_eq!(ports, vec![20, 21, 22, 23, 24, 25, 31, 32, 45, 46, 47, 48, 49, 50]);
+        assert_eq!(
+            ports,
+            vec![20, 21, 22, 23, 24, 25, 31, 32, 45, 46, 47, 48, 49, 50]
+        );
     }
 
     #[test]
