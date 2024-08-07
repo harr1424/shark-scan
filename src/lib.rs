@@ -1,6 +1,6 @@
-//! # thread_safe_port_scanner
+//! # shark-scan
 //!
-//! `thread_safe_port_scanner` scans open ports on a target IP address. Users can
+//! `shark-scan` scans open ports on a target IP address. Users can
 //! provide command line arguments to specify ports to scan as port ranges (1:1024),
 //! comma separated lists (80,443), or both (80,443,1024:8080). Users can also specify
 //! the number of threads to use when scanning, a timeout duration for connections in milliseconds,
@@ -13,7 +13,7 @@
 //! When the probe flag is provided, the following HTTP GET request will be sent to
 //! open ports:
 //!
-//! ```
+//! ```ignore
 //! let http_request = format!(
 //!     "GET / HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
 //!     target
@@ -28,7 +28,7 @@
 //!
 //! let mut banner = vec![0; 1024];
 //!
-//! //! Wait one full second to read response from server
+//! // Wait one full second to read response from server
 //! match timeout(Duration::from_secs(1), stream.read(&mut banner)).await {
 //!     Ok(Ok(n)) if n > 0 => {
 //!         info!("Read {} bytes from {}", n, address);

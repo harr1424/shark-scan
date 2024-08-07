@@ -142,8 +142,44 @@ pub async fn scan(args: Args) {
 
     println!();
     for result in results.await.iter() {
-        println!("Port {} {}{}", result.port, result.status, result.banner.as_ref().map(|b| format!(" - {}", b)).unwrap_or_default());
+        println!("Port {} {}{}", result.port, result.status,
+                 result.banner.as_ref().map(|b| format!(" - {}", b)).unwrap_or_default());
     }
 
     println!("\nScanning completed in {:.2} seconds", duration.as_secs_f64());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_open_port() {
+        // Assuming the local network has port 80 open
+        let target = Arc::new("192.168.1.1".to_string());
+        let port = 80;
+        let results = Arc::new(AsyncMutex::new(Vec::new()));
+        let results_clone = Arc::clone(&results);
+
+        check_port(target, port, 100, false, results_clone).await;
+
+        let results = results.lock().await;
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].port, port);
+        assert_eq!(results[0].status, "open");
+    }
+
+    #[tokio::test]
+    async fn test_closed_port() {
+        // Assuming the local network has port 90 closed
+        let target = Arc::new("192.168.1.1".to_string());
+        let port = 90;
+        let results = Arc::new(AsyncMutex::new(Vec::new()));
+        let results_clone = Arc::clone(&results);
+
+        check_port(target, port, 100, false, results_clone).await;
+
+        let results = results.lock().await;
+        assert_eq!(results.len(), 0);
+    }
 }

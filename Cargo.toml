@@ -1,9 +1,9 @@
 [package]
-name = "thread_safe_port_scanner"
+name = "shark-scan"
 version = "0.1.0"
 edition = "2021"
 authors = ["John Harrington"]
-description = "A multi-threaded port scanner supporting user specified port ranges and thread quantity"
+description = "An async multi-threaded port scanner supporting user specified port ranges, timeout durations, and thread quantity"
 
 
 [dependencies]
@@ -14,3 +14,6 @@ log = "0.4.22"
 env_logger = "0.11.5"
 clap = { version="4.5.13", features=["derive"] }
 serde = { version = "1.0.204", features = ["derive"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }

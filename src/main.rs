@@ -1,6 +1,6 @@
 use log::{LevelFilter};
 use clap::{CommandFactory, FromArgMatches};
-use thread_safe_port_scanner::{parser::Args, scanner::scan};
+use shark_scan::{parser::Args, scanner::scan};
 
 #[tokio::main]
 async fn main() {

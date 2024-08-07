@@ -39,9 +39,10 @@ pub struct Args {
     pub(crate) probe: bool,
 }
 
-pub (crate) fn parse_ports(port_arg: &str) -> Vec<u16> {
+pub(crate) fn parse_ports(port_arg: &str) -> Vec<u16> {
     let mut ports = Vec::new();
     for port in port_arg.split(',') {
+        let port = port.trim();
         if port.contains(':') {
             let range: Vec<&str> = port.split(':').collect();
             if range.len() == 2 {
@@ -60,4 +61,35 @@ pub (crate) fn parse_ports(port_arg: &str) -> Vec<u16> {
     }
 
     ports
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_ports;
+    #[test]
+    fn test_parse_ports() {
+        let port_range = "20:25,31,32,45:50";
+        let ports = parse_ports(port_range);
+        assert_eq!(ports, vec![20, 21, 22, 23, 24, 25, 31, 32, 45, 46, 47, 48, 49, 50]);
+    }
+
+    #[test]
+    fn test_parse_ports_list_trimmed() {
+        let port_range = "14, 15, 29";
+        let ports = parse_ports(port_range);
+        assert_eq!(ports, vec![14, 15, 29]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid port:")]
+    fn test_parse_invalid_port_range() {
+        let port_range = "14-15";
+        let _ = parse_ports(port_range);
+    }
+    #[test]
+    #[should_panic(expected = "Invalid port:")]
+    fn test_parse_invalid_port_value() {
+        let port_range = "14, a2";
+        let _ = parse_ports(port_range);
+    }
 }
