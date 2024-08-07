@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 authors = ["John Harrington"]
 description = "An async multi-threaded port scanner supporting user specified port ranges, timeout durations, and thread quantity"
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/shark-scan/0.1.0/shark-scan/"
+readme = "README.md"
+repository = "https://github.com/harr1424/shark-scan"
+keywords = ["port", "scan", "sniff", "async", "threaded"]
 
 
 [dependencies]
