@@ -126,6 +126,8 @@ pub async fn scan(args: Args) {
     let duration = end.duration_since(start);
 
     let results = results.lock();
+
+    println!();
     for result in results.await.iter() {
         println!("Port {} {}{}", result.port, result.status, result.banner.as_ref().map(|b| format!(" - {}", b)).unwrap_or_default());
     }
