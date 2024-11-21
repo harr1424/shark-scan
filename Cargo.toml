@@ -1,6 +1,6 @@
 [package]
 name = "shark-scan"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["John Harrington"]
 description = "An async multi-threaded port scanner supporting user specified port ranges, timeout durations, and thread quantity"
@@ -22,3 +22,7 @@ serde = { version = "1.0.204", features = ["derive"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
